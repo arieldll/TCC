@@ -34,9 +34,11 @@ using namespace std;
 //hide the local functions in an anon namespace
 namespace {
 	int quantidade_aguardo = 100; //provavelmente vá usar isso depois
-	int threshold = 40;
+	int threshold = 80;
 	int contour_length_threshold= 45;
 	
+	int veiculos_leves = 0;
+	int veiculos_pesados = 0;
 	
 	int morph_elem = 0;
 	int morph_size = 0;
@@ -82,8 +84,7 @@ namespace {
 		fundo_gray = imread("./fundo.png", CV_BGR2GRAY);
 		int pi = 0;
 		
-		pMOG2 = createBackgroundSubtractorMOG2(); //MOG2 approach
-		
+		pMOG2 = createBackgroundSubtractorMOG2(500,16,false); //MOG2 approach
 		vector<vector<Point> > contours;
 		vector<Vec4i> hierarchy;
 		RNG rng(12345);
@@ -125,11 +126,14 @@ namespace {
 			pMOG2->apply(frame_gray, substraction);
 			
 			int operation = morph_operator + 2;			
-			Mat element = getStructuringElement(2, Size(5,5), Point(1,1));
+			Mat element = getStructuringElement(0, Size(5,5), Point(0,0));
 						
 			morphologyEx(substraction, substraction, MORPH_OPEN, element );
+			
+			element = getStructuringElement(0, Size(5,5), Point(0,0));
 			morphologyEx(substraction, substraction, MORPH_CLOSE, element);			
-			element = getStructuringElement(2, Size(20,20), Point(1,1));
+			
+			element = getStructuringElement(0, Size(15,15), Point(0,0));
 			dilate(substraction, substraction, element);						
 			//morphologyEx(substraction, substraction, MORPH_TOPHAT, element );
 			//dilate(substraction, substraction, 0, Point(0,0), 2, 1, 1);
@@ -144,7 +148,7 @@ namespace {
 			
 			
 		
-			findContours(resultado_canny, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0) );
+			findContours(resultado_canny, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, Point(0, 0) ); //CV_RETR_EXTERNAL
 			/// Draw contours
 			/*Mat drawing = Mat::zeros(frame_gray.size(), CV_8UC3 );
 			for( int i = 0; i< contours.size(); i++ )
@@ -162,8 +166,8 @@ namespace {
 			} */
 			
 			// iterate through each contour.
-			for( int i = 0; i< contours.size(); i++ )
-			{
+			cv::drawContours(frame,contours,-1,cv::Scalar(0,0,255),2);
+			for( int i = 0; i< contours.size(); i++){
 				//  Find the area of contour
 				double a = arcLength(contours[i],true); //contourArea é a área e arcLength é o perímetro
 				if(a >= threshold){
