@@ -1,4 +1,5 @@
 /*
+/*
 * starter_video.cpp
 *
 *  Created on: Nov 23, 2010
@@ -37,8 +38,18 @@ namespace {
 	int threshold = 80;
 	int contour_length_threshold= 45;
 	
+	float quant_carros = 0;
+	
 	int veiculos_leves = 0;
 	int veiculos_pesados = 0;
+	
+	//int linha_x1 = 168, linha_y1 = 190;
+	//int linha_x2 = 502, linha_y2 = 190;
+	
+	int linha_x1 = 3, linha_y1 = 195;
+	int linha_x2 = 478, linha_y2 = 184;
+	
+	Point ini_linha(linha_x1, linha_y1), fim_linha(linha_x2, linha_y2);
 	
 	int morph_elem = 0;
 	int morph_size = 0;
@@ -55,14 +66,14 @@ namespace {
 		if  ( event == EVENT_LBUTTONDOWN ){
 			cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
 			threshold+=5;
-			printf("\n\n\n\n\n\n\nmostrar vale: %lld\n\n\n\n\n\n\n", mostrar);
+			//printf("\n\n\n\n\n\n\nmostrar vale: %lld\n\n\n\n\n\n\n", mostrar);
 		}else if  ( event == EVENT_RBUTTONDOWN ){
 			cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
 			if(threshold > 0) threshold--;			
 		}else if  ( event == EVENT_MBUTTONDOWN ){
 			cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
 		}else if ( event == EVENT_MOUSEMOVE){
-			cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
+			//cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
 		}
 	}
 
@@ -101,7 +112,7 @@ namespace {
                 break;
             arrayx =  &capture;
 			
-            
+            cv::line(frame, ini_linha, fim_linha, Scalar(0,255,255));
 
             // Converte a imagem para cinza e aplica uma mascara de media
 		    cvtColor(frame, frame_gray, CV_BGR2GRAY);
@@ -166,11 +177,60 @@ namespace {
 			} */
 			
 			// iterate through each contour.
-			cv::drawContours(frame,contours,-1,cv::Scalar(0,0,255),2);
+			int inicio_x = 6, inicio_y = 183;
+			int fim_x = 420, fim_y = 248;
+			
+			Rect desenho_linhas;
+			desenho_linhas.x = inicio_x;
+			desenho_linhas.y = inicio_y;
+			desenho_linhas.width = fim_x - inicio_x;
+			desenho_linhas.height = fim_y - inicio_y;
+			
+			rectangle(frame, desenho_linhas,  Scalar(255,0,0),2, 8,0);
 			for( int i = 0; i< contours.size(); i++){
 				//  Find the area of contour
 				double a = arcLength(contours[i],true); //contourArea é a área e arcLength é o perímetro
+				//printf("contornos valem: %d\n", contours[i].size());
 				if(a >= threshold){
+					vector<Moments> mu(contours[i].size());
+					vector<Point2f> mc( contours[i].size() );
+					
+					//copia contornos para os momentos da centroid
+					for(int j=0; j<contours[i].size(); j++){
+						mu[j] = moments(contours[i], false);
+					}
+					
+					float quantidade_acumula = 0;
+					//calcula a centroid e desenha ela na tela
+					
+					for(size_t n = 0; n < contours.size(); n++){ 
+						Scalar color = Scalar(0,255,0);
+						mc[n] = Point2f( static_cast<float>(mu[n].m10/mu[n].m00) , static_cast<float>(mu[n].m01/mu[n].m00) ); 						
+						circle(frame, mc[n], 4, color, -1, 8, 0 );
+						
+						float centroid_x = mc[n].x;
+						float centroid_y = mc[n].y;					
+						
+						if(inicio_x <=centroid_x && fim_x>=centroid_x && inicio_y<=centroid_y && fim_y>=centroid_y){
+							quantidade_acumula++;
+							cout << "--------------------------- Contou um carro --------------------------- [" << quant_carros << "]\n";
+						}
+						
+						/*float calc1 = fim_linha.y - centroid_y / fim_linha.x - centroid_x;
+						float calc2 = centroid_y - ini_linha.y / centroid_x - ini_linha.x;					
+						float diferenca = abs(calc1 - calc2);	
+						//if(diferenca < 0 ) diferenca *= -1;
+						if(calc1==calc2){
+							quantidade_acumula++;
+							cout << "--------------------------- Contou um carro --------------------------- [" << diferenca << "]\n";
+						}else{
+							//cout << ">> calc 1: " << calc1 << " ====== calc 2: " << calc2 << " ========== \n";
+						}*/
+					}
+					quant_carros += (quantidade_acumula / contours.size());
+					//cout << "\n\n\n >>>>> Quantidade de carros contados até o momento: " << quant_carros;
+					
+
 					//if(a > largest_area){
 						largest_area=a;
 						//cout << i << " area  " << a << endl;
@@ -182,7 +242,7 @@ namespace {
 					//Scalar color( 255,255,255);  // color of the contour in the
 					//Draw the contour and rectangle
 					//drawContours( frame, contours,largest_contour_index, color, CV_FILLED,8,hierarchy);
-					rectangle(frame, bounding_rect,  Scalar(255,0,0),2, 8,0);				
+					rectangle(frame, bounding_rect,  Scalar(255,255,0),2, 8,0);				
 				}
 			}
 			//imshow( "Display window", src );    
@@ -214,6 +274,7 @@ namespace {
                 break;
             }            
         }
+        cout << "\n\n\n >>>>> Quantidade final de carros contados: " << round(quant_carros);
         return 0;
     }
 }
