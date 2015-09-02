@@ -1,17 +1,3 @@
-/*
-/*
-* starter_video.cpp
-*
-*  Created on: Nov 23, 2010
-*      Author: Ethan Rublee
-*
-*  Modified on: April 17, 2013
-*      Author: Kevin Hughes
-*
-* A starter sample for using OpenCV VideoCapture with capture devices, video files or image sequences
-* easy as CV_PI right?
-*/
-
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/videoio/videoio.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -43,7 +29,7 @@ namespace {
 	
 	float quant_carros = 0;
 	
-	float distancia_minima = 250;
+	float distancia_minima = 35; //tava 70
 	int veiculos_leves = 0;
 	int veiculos_pesados = 0;
 	
@@ -70,14 +56,16 @@ namespace {
 		if  ( event == EVENT_LBUTTONDOWN ){
 			cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
 			threshold+=5;
+			getchar();
 			//printf("\n\n\n\n\n\n\nmostrar vale: %lld\n\n\n\n\n\n\n", mostrar);
 		}else if  ( event == EVENT_RBUTTONDOWN ){
 			cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
 			if(threshold > 0) threshold--;			
 		}else if  ( event == EVENT_MBUTTONDOWN ){
+			quantidade_aguardo += 100;
 			cout << "Middle button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
 		}else if ( event == EVENT_MOUSEMOVE){
-			//quantidade_aguardo += 10;
+			
 			//cout << "Mouse move over the window - position (" << x << ", " << y << ")" << endl;
 		}
 	}
@@ -93,10 +81,10 @@ namespace {
         char filename[200];
         string window_name = "video | q or esc to quit";
         cout << "press space to save a picture. q or esc to quit" << endl;
-        namedWindow("original", CV_WINDOW_NORMAL);
-        namedWindow(window_name, WINDOW_KEEPRATIO); //resizable window;
-        namedWindow("substraction", CV_WINDOW_NORMAL);
-        namedWindow("canny", WINDOW_KEEPRATIO); //resizable window;
+        namedWindow("original", WINDOW_AUTOSIZE );
+        namedWindow(window_name, WINDOW_AUTOSIZE ); //resizable window;
+        namedWindow("substraction", WINDOW_AUTOSIZE );
+        namedWindow("canny", WINDOW_AUTOSIZE ); //resizable window;
         Mat frame, frame_gray, fundo_gray, substraction, resultado_canny, frame_original;
         CvArr* arrayx;
 		setMouseCallback(window_name, CallBackFunc, NULL);
@@ -111,7 +99,10 @@ namespace {
 		RNG rng(12345);
 		int frames = 0;
         for(;;){
+						
 			if(ultimas_centroides.size()==0) coletou_centroides = 0;
+			
+			
 			printf("frame %d\n", frames);
 			//getchar();
 			int largest_area = 0;
@@ -124,7 +115,7 @@ namespace {
                 break;
             arrayx =  &capture;
 			
-            cv::line(frame, ini_linha, fim_linha, Scalar(0,255,255));
+            //cv::line(frame, ini_linha, fim_linha, Scalar(0,255,255));
 
             // Converte a imagem para cinza e aplica uma mascara de media
 		    cvtColor(frame, frame_gray, CV_BGR2GRAY);
@@ -149,7 +140,7 @@ namespace {
 			pMOG2->apply(frame_gray, substraction);
 			
 			int operation = morph_operator + 2;			
-			Mat element = getStructuringElement(0, Size(8,8), Point(0,0));
+			Mat element = getStructuringElement(0, Size(11,11), Point(0,0));
 						
 			morphologyEx(substraction, substraction, MORPH_OPEN, element );
 			
@@ -190,8 +181,18 @@ namespace {
 			
 			// iterate through each contour.
 			//int inicio_x = 123, inicio_y = 183;
-			int inicio_x = 144, inicio_y = 180;
+			//int inicio_x = 144, inicio_y = 180; //-> tela inteira
+			/*lado direito*/
+			int inicio_x = 316, inicio_y = 198;
 			int fim_x = 420, fim_y = 248;
+			
+			/*no meio*/
+			//int inicio_x = 238, inicio_y = 197;
+			//int fim_x = 302, fim_y = 217;
+			
+			/*esquerdo*/
+			//int inicio_x = 144, inicio_y = 156;
+			//int fim_x = 227, fim_y = 220;
 			
 			Rect desenho_linhas;
 			desenho_linhas.x = inicio_x;
@@ -235,6 +236,7 @@ namespace {
 					centroid_y /= contours.size();
 					
 					if(inicio_x <= centroid_x && fim_x>=centroid_x && inicio_y<=centroid_y && fim_y>=centroid_y){
+						cout << "> Entrou na centróide <\n";
 						Scalar color = Scalar(0,255,0);
 						circle(frame, Point(centroid_x, centroid_y), 4, color, -1, 8, 0 );
 						largest_area = a;
@@ -243,6 +245,7 @@ namespace {
 						
 						float tamanho_veiculo = sqrt(pow(extremos.width, 2) + pow(extremos.height, 2));
 						cout << "Tamanho do veículo: " << tamanho_veiculo << "\n";
+						
 						bounding_rect = boundingRect(contours[i]);
 						//Draw the contour and rectangle
 						//drawContours( frame, contours,largest_contour_index, color, CV_FILLED,8,hierarchy);					
@@ -257,30 +260,44 @@ namespace {
 						if(coletou_centroides){
 							float menor_dist = 999999;
 							Point chave;
-							for(int b=0; b<ultimas_centroides.size(); b++){
+							for(int b=0; b < ultimas_centroides.size() && ultimas_centroides.size() > 0; b++){
 								Point p1 = ultimas_centroides[b];
 								Point p2 = ponto;
 								float dist = sqrt(pow(p1.x - p1.y, 2) + pow(p2.x - p2.y, 2));
-								//cout << "Distância " << dist << "\n";
+								cout << "Distância calculada " << dist << "\n";
 								if(dist < menor_dist){ //encontrou um carro correspondente
 									menor_dist = dist;
 									chave.x = p1.x;
 									chave.y = p1.y;
 								}
 							}
+							cout << "Menor distância " << menor_dist << "\n";
+							cv::line(frame, ponto, chave, cv::Scalar(200,0,0), 3);
 							//printf("menor distância: %f\n", menor_dist);							
-							if(menor_dist > distancia_minima){
+							if(menor_dist > distancia_minima && atual_centroides.size() > 1){
+								cout << "\n================= CONTOU UM VEÍCULO =====================\n";
 								id_carros++;
+								if(tamanho_veiculo < 150){
+									veiculos_leves++;
+								}else{
+									veiculos_pesados++;
+								}								
+								//getchar();
 								//printf(" ---> Contou %d\n", id_carros);
 							}else{
-								cv::line(frame, ponto, chave, cv::Scalar(200,0,0), 3);
+								
 							}
 						}
 						
 						
 						//grava a anterior
 						if(!coletou_centroides){
-							id_carros++;
+							/*id_carros++;
+							if(tamanho_veiculo < 90){
+								veiculos_leves++;
+							}else{
+								veiculos_pesados++;
+							} */
 							//ultimas_centroides.push_back(make_pair(ponto, id_carros));
 							ultimas_centroides.push_back(ponto);
 						}
@@ -307,8 +324,14 @@ namespace {
 			//imshow("", image2);
 
 			//cv::line(substraction, cv::Point(160, 200), cv::Point(472, 220), cv::Scalar(220,0,0), 10, 4); //traçar a linha
+			
+			std::ostringstream str;
+			str << "(Leves: " << veiculos_leves << " / Pesados: " << veiculos_pesados << ")  - " << id_carros << "";
+			cv::putText(frame, str.str(), Point(0,30), cv::FONT_HERSHEY_SIMPLEX, 1, CV_RGB(255,0,0), 3, 8);
+			
 			imshow("original", frame_original);
 			imshow(window_name, frame);
+			rectangle(substraction, desenho_linhas,  Scalar(255,0,0),2, 8,0);
 		    imshow("substraction", substraction);
 		    imshow("canny", resultado_canny);
 
@@ -356,9 +379,10 @@ namespace {
 				}
 				atual_centroides.clear();
 			}
+			
             coletou_centroides = 1;            
-            frames++;
-            if(frames==310) break;
+            //frames++;
+            //if(frames==310) break;
         }
         cout << "\n\n\n >>>>> Quantidade final de carros contados: " << round(id_carros) << "\n Veículos leves: " << veiculos_leves << "\n Veículos pesados: " << veiculos_pesados;
         return 0;
