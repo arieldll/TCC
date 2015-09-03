@@ -14,6 +14,7 @@
 #include "opencv2/core/core.hpp"
 #include <algorithm>
 #include <unistd.h>
+#include <postgresql/libpq-fe.h>
 
 using namespace cv;
 using namespace std;
@@ -24,12 +25,17 @@ namespace {
 	int threshold = 80;
 	int contour_length_threshold= 45;
 	
-	
+	typedef struct quadrado{
+		Point inicio;
+		Point fim;
+		int id;
+		int zona_deteccao;
+	} quadrado;
 	
 	
 	float quant_carros = 0;
 	
-	float distancia_minima = 35; //tava 70
+	float distancia_minima = 30; //tava 30
 	int veiculos_leves = 0;
 	int veiculos_pesados = 0;
 	
@@ -71,12 +77,58 @@ namespace {
 	}
 	
 	//std::vector< std::pair< Point, int> > ultimas_centroides;
-	std::vector<Point> ultimas_centroides;
-	std::vector<Point> atual_centroides;
-	int coletou_centroides = 0, id_carros = 0;	
+	
+	std::vector< vector<Point> > ultimas_centroides;
+	std::vector< vector<Point> > atual_centroides;
+	
+	std::vector<quadrado> zonas_deteccao;
+	
+	std::vector<int> coletou_centroides;
+	int id_carros = 0;	
+	
+	void adicionar_zona(int inicio_x, int inicio_y, int fim_x, int fim_y, int id, int zona_deteccao){
+		quadrado q;
+		q.inicio.x = inicio_x;
+		q.inicio.y = inicio_y;
+		q.fim.x = fim_x;
+		q.fim.y = fim_y;
+		q.id = id;
+		q.zona_deteccao = zona_deteccao;
+		zonas_deteccao.push_back(q);
+		vector<Point> p;
+		ultimas_centroides.push_back(p);
+		atual_centroides.push_back(p);
+		coletou_centroides.push_back(0);
+	}
+	
+	/*int inicio_x = 316, inicio_y = 198;
+			int fim_x = 420, fim_y = 248;
+			
+			/*no meio*/
+			//int inicio_x = 238, inicio_y = 197;
+			//int fim_x = 302, fim_y = 217;
+			
+			/*esquerdo*/
+			//int inicio_x = 144, inicio_y = 156;
+			//int fim_x = 227, fim_y = 220;*/
+	
 	
 	
     int process(VideoCapture& capture) {
+		
+		//PGconn *conn; //conexao com o postgres
+		//conn = PQconnectdb("dbname=tcc-ariel host=127.0.0.1 user=postgres password=postgres");
+		
+		//adicionar_zona(317, 199, 418, 248, 1, 1);
+		//adicionar_zona(200, 198, 310, 246, 2, 1);
+		
+		//adicionar_zona(102, 193, 184, 253, 3, 1);
+		//adicionar_zona(19, 177, 71, 241, 4, 1);
+		
+		adicionar_zona(316, 198, 420, 248, 1, 1);
+		adicionar_zona(238, 197, 302, 217, 2, 1);
+		adicionar_zona(144, 156, 227, 220, 3, 1);
+		
         int n = 0;
         char filename[200];
         string window_name = "video | q or esc to quit";
@@ -100,7 +152,6 @@ namespace {
 		int frames = 0;
         for(;;){
 						
-			if(ultimas_centroides.size()==0) coletou_centroides = 0;
 			
 			
 			printf("frame %d\n", frames);
@@ -183,155 +234,196 @@ namespace {
 			//int inicio_x = 123, inicio_y = 183;
 			//int inicio_x = 144, inicio_y = 180; //-> tela inteira
 			/*lado direito*/
-			int inicio_x = 316, inicio_y = 198;
-			int fim_x = 420, fim_y = 248;
-			
-			/*no meio*/
-			//int inicio_x = 238, inicio_y = 197;
-			//int fim_x = 302, fim_y = 217;
-			
-			/*esquerdo*/
-			//int inicio_x = 144, inicio_y = 156;
-			//int fim_x = 227, fim_y = 220;
-			
-			Rect desenho_linhas;
-			desenho_linhas.x = inicio_x;
-			desenho_linhas.y = inicio_y;
-			desenho_linhas.width = fim_x - inicio_x;
-			desenho_linhas.height = fim_y - inicio_y;
-			
-			rectangle(frame, desenho_linhas,  Scalar(255,0,0),2, 8,0);
-			for( int i = 0; i< contours.size(); i++){
-				//  Find the area of contour
-				double a = arcLength(contours[i],true); //contourArea é a área e arcLength é o perímetro
-				//printf("contornos valem: %d\n", contours[i].size());
-				if(a >= threshold){
-					vector<Moments> mu(contours[i].size());
-					vector<Point2f> mc( contours[i].size() );
-					
-					//copia contornos para os momentos da centroid
-					for(int j=0; j<contours[i].size(); j++){
-						mu[j] = moments(contours[i], false);
-					}
-					
-					float quantidade_acumula = 0;
-					//calcula a centroid e desenha ela na tela
-					float centroid_x = 0, centroid_y = 0;
-					for(size_t n = 0; n < contours.size(); n++){ 						
-						mc[n] = Point2f( static_cast<float>(mu[n].m10/mu[n].m00) , static_cast<float>(mu[n].m01/mu[n].m00) ); 																
-						centroid_x += mc[n].x;
-						centroid_y += mc[n].y;											
-						/*float calc1 = fim_linha.y - centroid_y / fim_linha.x - centroid_x;
-						float calc2 = centroid_y - ini_linha.y / centroid_x - ini_linha.x;					
-						float diferenca = abs(calc1 - calc2);	
-						//if(diferenca < 0 ) diferenca *= -1;
-						if(calc1==calc2){
-							quantidade_acumula++;
-							cout << "--------------------------- Contou um carro --------------------------- [" << diferenca << "]\n";
-						}else{
-							//cout << ">> calc 1: " << calc1 << " ====== calc 2: " << calc2 << " ========== \n";
-						}*/
-					}
-					centroid_x /= contours.size();
-					centroid_y /= contours.size();
-					
-					if(inicio_x <= centroid_x && fim_x>=centroid_x && inicio_y<=centroid_y && fim_y>=centroid_y){
-						cout << "> Entrou na centróide <\n";
-						Scalar color = Scalar(0,255,0);
-						circle(frame, Point(centroid_x, centroid_y), 4, color, -1, 8, 0 );
-						largest_area = a;
-						largest_contour_index = i;
-						Rect extremos = boundingRect(contours[i]);
+			for(int gera = 0; gera < zonas_deteccao.size(); gera++){
+				if(ultimas_centroides[gera].size()==0) coletou_centroides[gera] = 0;
+				//int inicio_x = 316, inicio_y = 198;
+				//int fim_x = 420, fim_y = 248;
+				quadrado quad = zonas_deteccao[gera];
+				int inicio_x = quad.inicio.x;
+				int inicio_y = quad.inicio.y;
+				int fim_x = quad.fim.x;
+				int fim_y = quad.fim.y;
+				
+				/*no meio*/
+				//int inicio_x = 238, inicio_y = 197;
+				//int fim_x = 302, fim_y = 217;
+				
+				/*esquerdo*/
+				//int inicio_x = 144, inicio_y = 156;
+				//int fim_x = 227, fim_y = 220;
+				
+				Rect desenho_linhas;
+				desenho_linhas.x = inicio_x;
+				desenho_linhas.y = inicio_y;
+				desenho_linhas.width = fim_x - inicio_x;
+				desenho_linhas.height = fim_y - inicio_y;
+				
+				rectangle(frame, desenho_linhas,  Scalar(255,0,0),2, 8,0);
+				for( int i = 0; i< contours.size(); i++){
+					//  Find the area of contour
+					double a = arcLength(contours[i],true); //contourArea é a área e arcLength é o perímetro
+					//printf("contornos valem: %d\n", contours[i].size());
+					if(a >= threshold){
+						vector<Moments> mu(contours[i].size());
+						vector<Point2f> mc( contours[i].size() );
 						
-						float tamanho_veiculo = sqrt(pow(extremos.width, 2) + pow(extremos.height, 2));
-						cout << "Tamanho do veículo: " << tamanho_veiculo << "\n";
+						//copia contornos para os momentos da centroid
+						for(int j=0; j<contours[i].size(); j++){
+							mu[j] = moments(contours[i], false);
+						}
 						
-						bounding_rect = boundingRect(contours[i]);
-						//Draw the contour and rectangle
-						//drawContours( frame, contours,largest_contour_index, color, CV_FILLED,8,hierarchy);					
-						rectangle(frame, bounding_rect,  Scalar(255,255,0),2, 8,0);				
-						//quantidade_acumula++;
-						//cout << "--------------------------- Contou um carro --------------------------- [" << quant_carros << "]\n";
-						Point ponto = Point(centroid_x, centroid_y);
+						float quantidade_acumula = 0;
+						//calcula a centroid e desenha ela na tela
+						float centroid_x = 0, centroid_y = 0;
+						for(size_t n = 0; n < contours.size(); n++){ 						
+							mc[n] = Point2f( static_cast<float>(mu[n].m10/mu[n].m00) , static_cast<float>(mu[n].m01/mu[n].m00) ); 																
+							centroid_x += mc[n].x;
+							centroid_y += mc[n].y;											
+							/*float calc1 = fim_linha.y - centroid_y / fim_linha.x - centroid_x;
+							float calc2 = centroid_y - ini_linha.y / centroid_x - ini_linha.x;					
+							float diferenca = abs(calc1 - calc2);	
+							//if(diferenca < 0 ) diferenca *= -1;
+							if(calc1==calc2){
+								quantidade_acumula++;
+								cout << "--------------------------- Contou um carro --------------------------- [" << diferenca << "]\n";
+							}else{
+								//cout << ">> calc 1: " << calc1 << " ====== calc 2: " << calc2 << " ========== \n";
+							}*/
+						}
+						centroid_x /= contours.size();
+						centroid_y /= contours.size();
 						
-						//grava a atual
-						atual_centroides.push_back(ponto);
-						
-						if(coletou_centroides){
-							float menor_dist = 999999;
-							Point chave;
-							for(int b=0; b < ultimas_centroides.size() && ultimas_centroides.size() > 0; b++){
-								Point p1 = ultimas_centroides[b];
-								Point p2 = ponto;
-								float dist = sqrt(pow(p1.x - p1.y, 2) + pow(p2.x - p2.y, 2));
-								cout << "Distância calculada " << dist << "\n";
-								if(dist < menor_dist){ //encontrou um carro correspondente
-									menor_dist = dist;
-									chave.x = p1.x;
-									chave.y = p1.y;
+						if(inicio_x <= centroid_x && fim_x>=centroid_x && inicio_y<=centroid_y && fim_y>=centroid_y){
+							cout << "> Entrou na centróide <\n";
+							Scalar color = Scalar(0,255,0);
+							circle(frame, Point(centroid_x, centroid_y), 4, color, -1, 8, 0 );
+							largest_area = a;
+							largest_contour_index = i;
+							Rect extremos = boundingRect(contours[i]);
+							
+							float tamanho_veiculo = sqrt(pow(extremos.width, 2) + pow(extremos.height, 2));
+							cout << "Tamanho do veículo: " << tamanho_veiculo << "\n";
+							
+							bounding_rect = boundingRect(contours[i]);
+							//Draw the contour and rectangle
+							//drawContours( frame, contours,largest_contour_index, color, CV_FILLED,8,hierarchy);					
+							rectangle(frame, bounding_rect,  Scalar(255,255,0),2, 8,0);				
+							//quantidade_acumula++;
+							//cout << "--------------------------- Contou um carro --------------------------- [" << quant_carros << "]\n";
+							Point ponto = Point(centroid_x, centroid_y);
+							
+							//grava a atual
+							atual_centroides[gera].push_back(ponto);
+							
+							if(coletou_centroides[gera]){
+								float menor_dist = 999999;
+								Point chave;
+								for(int b=0; b < ultimas_centroides[gera].size() && ultimas_centroides[gera].size() > 0; b++){
+									Point p1 = ultimas_centroides[gera][b];
+									Point p2 = ponto;
+									float dist = sqrt(pow(p1.x - p1.y, 2) + pow(p2.x - p2.y, 2));
+									cout << "Distância calculada " << dist << "\n";
+									if(dist < menor_dist){ //encontrou um carro correspondente
+										menor_dist = dist;
+										chave.x = p1.x;
+										chave.y = p1.y;
+									}
+								}
+								cout << "Menor distância " << menor_dist << "\n";
+								cv::line(frame, ponto, chave, cv::Scalar(200,0,0), 3);
+								//printf("menor distância: %f\n", menor_dist);							
+								if(menor_dist > distancia_minima && atual_centroides[gera].size() > 1){
+									cout << "\n================= CONTOU UM VEÍCULO =====================\n";
+									id_carros++;
+									if(tamanho_veiculo < 150){
+										veiculos_leves++;
+									}else{
+										veiculos_pesados++;
+									}								
+									//getchar();
+									//printf(" ---> Contou %d\n", id_carros);
+								}else{
+									
 								}
 							}
-							cout << "Menor distância " << menor_dist << "\n";
-							cv::line(frame, ponto, chave, cv::Scalar(200,0,0), 3);
-							//printf("menor distância: %f\n", menor_dist);							
-							if(menor_dist > distancia_minima && atual_centroides.size() > 1){
-								cout << "\n================= CONTOU UM VEÍCULO =====================\n";
-								id_carros++;
-								if(tamanho_veiculo < 150){
+							
+							
+							//grava a anterior
+							if(!coletou_centroides[gera]){
+								/*id_carros++;
+								if(tamanho_veiculo < 90){
 									veiculos_leves++;
 								}else{
 									veiculos_pesados++;
-								}								
-								//getchar();
-								//printf(" ---> Contou %d\n", id_carros);
-							}else{
-								
+								} */
+								//ultimas_centroides.push_back(make_pair(ponto, id_carros));
+								ultimas_centroides[gera].push_back(ponto);
 							}
 						}
 						
+						//cout << "\n\n\n >>>>> Quantidade de carros contados até o momento: " << quant_carros;
 						
-						//grava a anterior
-						if(!coletou_centroides){
-							/*id_carros++;
-							if(tamanho_veiculo < 90){
-								veiculos_leves++;
-							}else{
-								veiculos_pesados++;
-							} */
-							//ultimas_centroides.push_back(make_pair(ponto, id_carros));
-							ultimas_centroides.push_back(ponto);
-						}
+
+						//if(a > largest_area){
+							
+							//cout << i << " area  " << a << endl;
+							// Store the index of largest contour
+							
+							// Find the bounding rectangle for biggest contour
+							
+						//} 
+						//Scalar color( 255,255,255);  // color of the contour in the
 					}
-					
-					//cout << "\n\n\n >>>>> Quantidade de carros contados até o momento: " << quant_carros;
-					
-
-					//if(a > largest_area){
-						
-						//cout << i << " area  " << a << endl;
-						// Store the index of largest contour
-						
-						// Find the bounding rectangle for biggest contour
-						
-					//} 
-					//Scalar color( 255,255,255);  // color of the contour in the
 				}
-			}
-			//imshow( "Display window", src );    
-			
-			
-			
-			//imshow("", image2);
+				//imshow( "Display window", src );    
+				
+				
+				
+				//imshow("", image2);
 
-			//cv::line(substraction, cv::Point(160, 200), cv::Point(472, 220), cv::Scalar(220,0,0), 10, 4); //traçar a linha
+				//cv::line(substraction, cv::Point(160, 200), cv::Point(472, 220), cv::Scalar(220,0,0), 10, 4); //traçar a linha
+				rectangle(substraction, desenho_linhas,  Scalar(255,0,0),2, 8,0);
+				
+				printf("\n Tamanho %d %d - %d", (int)atual_centroides[gera].size(), (int) ultimas_centroides[gera].size(), id_carros);
+				if(coletou_centroides[gera]){
+					
+					/*for(int c=0; c<atual_centroides.size(); c++){
+						float menor_dist = 999999;
+						for(int b=0; b<ultimas_centroides.size(); b++){
+							Point p1 = ultimas_centroides[b];
+							Point p2 = atual_centroides[c];
+							float dist = sqrt(pow(p1.x - p1.y, 2) + pow(p2.x - p2.y, 2));
+							cv::line(frame, p1, p2, cv::Scalar(200,0,0), 10);
+							//cout << "Distância " << dist << "\n";
+							if(dist < menor_dist){ //encontrou um carro correspondente
+								menor_dist = dist;
+							}
+						}
+						if(menor_dist>distancia_minima){
+							id_carros++;
+							//printf(" ---> Contou %d\n", id_carros);
+						}
+					} */
+					
+					ultimas_centroides[gera].erase(ultimas_centroides[gera].begin(), ultimas_centroides[gera].end());
+					ultimas_centroides[gera].clear();
+					for(int b = 0; b<atual_centroides[gera].size(); b++){
+						ultimas_centroides[gera].push_back(atual_centroides[gera][b]);
+					}
+					atual_centroides[gera].clear();
+				}				
+				
+				coletou_centroides[gera] = 1;
+				
+			}
+			
 			
 			std::ostringstream str;
 			str << "(Leves: " << veiculos_leves << " / Pesados: " << veiculos_pesados << ")  - " << id_carros << "";
 			cv::putText(frame, str.str(), Point(0,30), cv::FONT_HERSHEY_SIMPLEX, 1, CV_RGB(255,0,0), 3, 8);
-			
+				
 			imshow("original", frame_original);
-			imshow(window_name, frame);
-			rectangle(substraction, desenho_linhas,  Scalar(255,0,0),2, 8,0);
+			imshow(window_name, frame);			
 		    imshow("substraction", substraction);
 		    imshow("canny", resultado_canny);
 
@@ -351,36 +443,8 @@ namespace {
             default:
                 break;
             }
-            printf("\n Tamanho %d %d - %d", (int)atual_centroides.size(), (int) ultimas_centroides.size(), id_carros);
-            if(coletou_centroides){
-				
-				/*for(int c=0; c<atual_centroides.size(); c++){
-					float menor_dist = 999999;
-					for(int b=0; b<ultimas_centroides.size(); b++){
-						Point p1 = ultimas_centroides[b];
-						Point p2 = atual_centroides[c];
-						float dist = sqrt(pow(p1.x - p1.y, 2) + pow(p2.x - p2.y, 2));
-						cv::line(frame, p1, p2, cv::Scalar(200,0,0), 10);
-						//cout << "Distância " << dist << "\n";
-						if(dist < menor_dist){ //encontrou um carro correspondente
-							menor_dist = dist;
-						}
-					}
-					if(menor_dist>distancia_minima){
-						id_carros++;
-						//printf(" ---> Contou %d\n", id_carros);
-					}
-				} */
-				
-				ultimas_centroides.erase(ultimas_centroides.begin(), ultimas_centroides.end());
-				ultimas_centroides.clear();
-				for(int b = 0; b<atual_centroides.size(); b++){
-					ultimas_centroides.push_back(atual_centroides[b]);
-				}
-				atual_centroides.clear();
-			}
 			
-            coletou_centroides = 1;            
+            
             //frames++;
             //if(frames==310) break;
         }
