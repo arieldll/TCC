@@ -15,6 +15,8 @@
 #include <algorithm>
 #include <unistd.h>
 #include <postgresql/libpq-fe.h>
+#include "/usr/include/pqxx/pqxx"
+
 
 using namespace cv;
 using namespace std;
@@ -116,6 +118,30 @@ namespace {
 	
     int process(VideoCapture& capture) {
 		
+	  pqxx::connection conexao_postgres("dbname=tcc-ariel host=127.0.0.1 user=postgres password=postgres");
+
+	 /* pqxx::result r = txn.exec(
+		"SELECT id "
+		"FROM Employee "
+		"WHERE name =");
+
+	  if (r.size() != 1)
+	  {
+		std::cerr
+		  << "Expected 1 employee with name " << " " << ", "
+		  << "but found " << r.size() << std::endl;
+		return 1;
+	  }
+
+	  int employee_id = r[0][0].as<int>();
+	  std::cout << "Updating employee #" << employee_id << std::endl;
+
+	  txn.exec(
+		"UPDATE EMPLOYEE "
+		"SET salary = salary + 1 "
+		"WHERE id = " + txn.quote(employee_id)); 
+
+	  txn.commit(); */
 		//PGconn *conn; //conexao com o postgres
 		//conn = PQconnectdb("dbname=tcc-ariel host=127.0.0.1 user=postgres password=postgres");
 		
@@ -236,6 +262,7 @@ namespace {
 			/*lado direito*/
 			for(int gera = 0; gera < zonas_deteccao.size(); gera++){
 				if(ultimas_centroides[gera].size()==0) coletou_centroides[gera] = 0;
+				
 				//int inicio_x = 316, inicio_y = 198;
 				//int fim_x = 420, fim_y = 248;
 				quadrado quad = zonas_deteccao[gera];
@@ -243,6 +270,7 @@ namespace {
 				int inicio_y = quad.inicio.y;
 				int fim_x = quad.fim.x;
 				int fim_y = quad.fim.y;
+				int zona_detectando = quad.zona_deteccao;
 				
 				/*no meio*/
 				//int inicio_x = 238, inicio_y = 197;
@@ -329,17 +357,30 @@ namespace {
 										chave.y = p1.y;
 									}
 								}
+								char posi_string[10000];
+								sprintf(posi_string, "%lf;%lf", centroid_x, centroid_y);								
+								string posicao_string = posi_string;
+								
+								
 								cout << "Menor distância " << menor_dist << "\n";
 								cv::line(frame, ponto, chave, cv::Scalar(200,0,0), 3);
 								//printf("menor distância: %f\n", menor_dist);							
 								if(menor_dist > distancia_minima && atual_centroides[gera].size() > 1){
 									cout << "\n================= CONTOU UM VEÍCULO =====================\n";
 									id_carros++;
+									int eh_leve = 0;
 									if(tamanho_veiculo < 150){
 										veiculos_leves++;
+										eh_leve = 1;
 									}else{
 										veiculos_pesados++;
-									}								
+										eh_leve = 0;
+									}
+									pqxx::work txn(conexao_postgres);
+									txn.exec("INSERT INTO veiculos_passagem(veiculo, posicao, classificacao, tempo, zona) values("+
+										txn.quote(id_carros) + ", " + txn.quote(posicao_string) + ", " + txn.quote(eh_leve) + ", current_timestamp , " + txn.quote(zona_detectando) + ")");
+									txn.commit();
+										//"WHERE id = " + txn.quote(employee_id)); 				
 									//getchar();
 									//printf(" ---> Contou %d\n", id_carros);
 								}else{
@@ -448,6 +489,7 @@ namespace {
             //frames++;
             //if(frames==310) break;
         }
+        
         cout << "\n\n\n >>>>> Quantidade final de carros contados: " << round(id_carros) << "\n Veículos leves: " << veiculos_leves << "\n Veículos pesados: " << veiculos_pesados;
         return 0;
     }
