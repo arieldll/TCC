@@ -10,6 +10,7 @@
 #include <opencv2/opencv.hpp>
 #include <string.h>
 #include <sstream>
+#include <fstream>
 #include <vector>
 #include "opencv2/core/core.hpp"
 #include <algorithm>
@@ -23,9 +24,9 @@ using namespace std;
 
 //hide the local functions in an anon namespace
 namespace {
-	int quantidade_aguardo = 100; //provavelmente vá usar isso depois
+	int quantidade_aguardo = 1; //provavelmente vá usar isso depois
 	int threshold = 80;
-	int contour_length_threshold= 45;
+	int contour_length_threshold= 55;
 	
 	typedef struct quadrado{
 		Point inicio;
@@ -37,7 +38,7 @@ namespace {
 	
 	float quant_carros = 0;
 	
-	float distancia_minima = 30; //tava 30
+	float distancia_minima = 15; //tava 30
 	int veiculos_leves = 0;
 	int veiculos_pesados = 0;
 	
@@ -59,12 +60,13 @@ namespace {
 	unsigned long long int mostrar;
 	
 	Ptr<BackgroundSubtractor> pMOG2; //MOG2 Background subtractor
+	std::ofstream arquivo_escrita("posicoes.oar");
 	
 	void CallBackFunc(int event, int x, int y, int flags, void* userdata){
 		if  ( event == EVENT_LBUTTONDOWN ){
 			cout << "Left button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
+			arquivo_escrita << "(" << x << ", " << y << ")" << endl;
 			threshold+=5;
-			getchar();
 			//printf("\n\n\n\n\n\n\nmostrar vale: %lld\n\n\n\n\n\n\n", mostrar);
 		}else if  ( event == EVENT_RBUTTONDOWN ){
 			cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
@@ -151,9 +153,49 @@ namespace {
 		//adicionar_zona(102, 193, 184, 253, 3, 1);
 		//adicionar_zona(19, 177, 71, 241, 4, 1);
 		
-		adicionar_zona(316, 198, 420, 248, 1, 1);
-		adicionar_zona(238, 197, 302, 217, 2, 1);
-		adicionar_zona(144, 156, 227, 220, 3, 1);
+		//adicionar_zona(316, 198, 420, 248, 1, 1);
+		//adicionar_zona(238, 197, 302, 217, 2, 1);
+		//adicionar_zona(144, 156, 227, 220, 3, 1);
+		//adicionar_zona(11, 879, 228, 1003, 1, 1);
+		
+		//adicionar_zona(618, 843, 514, 917, 2, 2);
+		
+		//adicionar_zona(219, 451, 532, 819, 3, 3);
+		
+		//adicionar_zona(641, 850, 514, 912, 4, 4);
+		
+		
+		
+		/*novo video*/
+		//zona 1
+		//adicionar_zona(96, 938, 155, 956, 1, 1);
+		//adicionar_zona(129, 967, 200, 999, 2, 1);
+		
+		//zona 2
+		//adicionar_zona(564, 835, 619, 888, 3, 2);
+		//adicionar_zona(551, 877, 579, 931, 4, 2);
+	
+		//adicionar_zona(84, 773, 137, 790, 5, 2);
+		//adicionar_zona(42, 782, 95, 799, 6, 2);
+		
+		/*(340, 726)
+(376, 763)
+(379, 737)
+(412, 771)*/
+		
+		//zona 3
+		//adicionar_zona(340, 726, 376, 763, 7, 3);
+		//adicionar_zona(379, 737, 412, 771, 8, 3);
+		
+		adicionar_zona(74, 399, 151, 428, 1, 1);
+		adicionar_zona(110, 438, 190, 455, 2, 1);
+		adicionar_zona(573, 299, 609, 353, 3, 2);
+		adicionar_zona(533, 339, 576, 394, 4, 2);
+		adicionar_zona(327, 203, 359, 230, 5, 3);
+		adicionar_zona(370, 210, 412, 241, 6, 3);
+		adicionar_zona(72, 232, 126, 244, 7, 2);
+		adicionar_zona(42, 241, 86, 254, 8, 2);
+
 		
         int n = 0;
         char filename[200];
@@ -171,7 +213,7 @@ namespace {
 		fundo_gray = imread("./fundo.png", CV_BGR2GRAY);
 		int pi = 0;
 		
-		pMOG2 = createBackgroundSubtractorMOG2(500,16,false); //MOG2 approach
+		pMOG2 = createBackgroundSubtractorMOG2(1000,16,false); //MOG2 approach
 		vector<vector<Point> > contours;
 		vector<Vec4i> hierarchy;
 		RNG rng(12345);
@@ -187,7 +229,15 @@ namespace {
 			Rect bounding_rect;
 			
 			//mostrar++;
-            capture >> frame >> frame_original;
+
+			// Crop the full image to that image contained by the rectangle myROI
+			// Note that this doesn't copy the data
+            capture >> frame >> frame_original;            
+            cv::Rect myROI(2, 540, 709, 550);
+			cv::Mat cropeedImage;
+			cropeedImage = frame(myROI);
+			frame = cropeedImage;
+            
             if (frame.empty())
                 break;
             arrayx =  &capture;
@@ -224,7 +274,7 @@ namespace {
 			element = getStructuringElement(0, Size(5,5), Point(0,0));
 			morphologyEx(substraction, substraction, MORPH_CLOSE, element);			
 			
-			element = getStructuringElement(0, Size(15,15), Point(0,0));
+			element = getStructuringElement(0, Size(25,25), Point(0,0));
 			dilate(substraction, substraction, element);						
 			//morphologyEx(substraction, substraction, MORPH_TOPHAT, element );
 			//dilate(substraction, substraction, 0, Point(0,0), 2, 1, 1);
@@ -233,7 +283,7 @@ namespace {
 			
 			//cv::absdiff(frame_gray, fundo_gray, substraction); // Absolute differences between the 2 images
 			//cv::threshold(substraction, substraction, 5, 255, CV_THRESH_BINARY); // set threshold to ignore small differences you can also use inrange function
-			Canny(substraction, resultado_canny, 20, 5, 3);
+			Canny(substraction, resultado_canny, 20, 100, 3);
 			//Canny(frame, frame_gray, 100, 200, 3); // => fica doidão
 			
 			
@@ -320,6 +370,9 @@ namespace {
 						}
 						centroid_x /= contours.size();
 						centroid_y /= contours.size();
+						
+						bounding_rect = boundingRect(contours[i]);
+						rectangle(frame, bounding_rect,  Scalar(120,252,252),2, 8,0);				
 						
 						if(inicio_x <= centroid_x && fim_x>=centroid_x && inicio_y<=centroid_y && fim_y>=centroid_y){
 							cout << "> Entrou na centróide <\n";
