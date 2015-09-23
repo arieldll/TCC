@@ -25,8 +25,8 @@ using namespace std;
 //hide the local functions in an anon namespace
 namespace {
 	int quantidade_aguardo = 1; //provavelmente vá usar isso depois
-	int threshold = 80;
-	int contour_length_threshold= 55;
+	int threshold = 90, max_deslocamento_frame = 100;
+	int contour_length_threshold= 90;
 	
 	typedef struct quadrado{
 		Point inicio;
@@ -37,8 +37,11 @@ namespace {
 	
 	
 	float quant_carros = 0;
+	int quant_carros_zona[60];
+	int min_tamanho_zona[60];
 	
-	float distancia_minima = 15; //tava 30
+	
+	float distancia_minima = 0; //tava 30
 	int veiculos_leves = 0;
 	int veiculos_pesados = 0;
 	
@@ -187,14 +190,18 @@ namespace {
 		//adicionar_zona(340, 726, 376, 763, 7, 3);
 		//adicionar_zona(379, 737, 412, 771, 8, 3);
 		
-		adicionar_zona(74, 399, 151, 428, 1, 1);
-		adicionar_zona(110, 438, 190, 455, 2, 1);
+		adicionar_zona(99, 383, 137, 413, 1, 1);
+		adicionar_zona(141, 416, 176, 462, 2, 1);
 		adicionar_zona(573, 299, 609, 353, 3, 2);
 		adicionar_zona(533, 339, 576, 394, 4, 2);
 		adicionar_zona(327, 203, 359, 230, 5, 3);
 		adicionar_zona(370, 210, 412, 241, 6, 3);
-		adicionar_zona(72, 232, 126, 244, 7, 2);
-		adicionar_zona(42, 241, 86, 254, 8, 2);
+		adicionar_zona(104, 244, 145, 257, 7, 2);
+		adicionar_zona(61, 257, 103, 270, 8, 2);
+		
+		min_tamanho_zona[1] = 70;
+		min_tamanho_zona[2] = 60;
+		min_tamanho_zona[3] = 60;
 
 		
         int n = 0;
@@ -213,11 +220,16 @@ namespace {
 		fundo_gray = imread("./fundo.png", CV_BGR2GRAY);
 		int pi = 0;
 		
-		pMOG2 = createBackgroundSubtractorMOG2(1000,16,false); //MOG2 approach
+		pMOG2 = createBackgroundSubtractorMOG2(350,16,false); //MOG2 approach
 		vector<vector<Point> > contours;
 		vector<Vec4i> hierarchy;
 		RNG rng(12345);
 		int frames = 0;
+		
+		for(int pnk=0; pnk<60; pnk++){
+			quant_carros_zona[pnk] = -50;
+		}
+		
         for(;;){
 						
 			
@@ -267,7 +279,7 @@ namespace {
 			pMOG2->apply(frame_gray, substraction);
 			
 			int operation = morph_operator + 2;			
-			Mat element = getStructuringElement(0, Size(11,11), Point(0,0));
+			Mat element = getStructuringElement(2, Size(7,7), Point(0,0)); //com 7 vai de boas
 						
 			morphologyEx(substraction, substraction, MORPH_OPEN, element );
 			
@@ -337,6 +349,11 @@ namespace {
 				desenho_linhas.height = fim_y - inicio_y;
 				
 				rectangle(frame, desenho_linhas,  Scalar(255,0,0),2, 8,0);
+				
+				std::ostringstream astr;
+				astr << "(" << zona_detectando << ")";
+				cv::putText(frame, astr.str(), Point(inicio_x, inicio_y - 10), cv::FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255,255,0), 2, 1);
+				
 				for( int i = 0; i< contours.size(); i++){
 					//  Find the area of contour
 					double a = arcLength(contours[i],true); //contourArea é a área e arcLength é o perímetro
@@ -371,8 +388,8 @@ namespace {
 						centroid_x /= contours.size();
 						centroid_y /= contours.size();
 						
-						bounding_rect = boundingRect(contours[i]);
-						rectangle(frame, bounding_rect,  Scalar(120,252,252),2, 8,0);				
+						//bounding_rect = boundingRect(contours[i]);
+						//rectangle(frame, bounding_rect,  Scalar(120,252,252),2, 8,0);				
 						
 						if(inicio_x <= centroid_x && fim_x>=centroid_x && inicio_y<=centroid_y && fim_y>=centroid_y){
 							cout << "> Entrou na centróide <\n";
@@ -388,6 +405,7 @@ namespace {
 							bounding_rect = boundingRect(contours[i]);
 							//Draw the contour and rectangle
 							//drawContours( frame, contours,largest_contour_index, color, CV_FILLED,8,hierarchy);					
+													
 							rectangle(frame, bounding_rect,  Scalar(255,255,0),2, 8,0);				
 							//quantidade_acumula++;
 							//cout << "--------------------------- Contou um carro --------------------------- [" << quant_carros << "]\n";
@@ -399,7 +417,8 @@ namespace {
 							if(coletou_centroides[gera]){
 								float menor_dist = 999999;
 								Point chave;
-								for(int b=0; b < ultimas_centroides[gera].size() && ultimas_centroides[gera].size() > 0; b++){
+								int removedor = 0;
+								for(int b=0; b < ultimas_centroides[gera].size() && ultimas_centroides[gera].size() > 0; b++){									
 									Point p1 = ultimas_centroides[gera][b];
 									Point p2 = ponto;
 									float dist = sqrt(pow(p1.x - p1.y, 2) + pow(p2.x - p2.y, 2));
@@ -408,8 +427,10 @@ namespace {
 										menor_dist = dist;
 										chave.x = p1.x;
 										chave.y = p1.y;
+										removedor = b;
 									}
 								}
+								
 								char posi_string[10000];
 								sprintf(posi_string, "%lf;%lf", centroid_x, centroid_y);								
 								string posicao_string = posi_string;
@@ -418,26 +439,30 @@ namespace {
 								cout << "Menor distância " << menor_dist << "\n";
 								cv::line(frame, ponto, chave, cv::Scalar(200,0,0), 3);
 								//printf("menor distância: %f\n", menor_dist);							
-								if(menor_dist > distancia_minima && atual_centroides[gera].size() > 1){
+								if(menor_dist > distancia_minima && atual_centroides[gera].size() > 1 && ultimas_centroides[gera].size() >= 1 && (tamanho_veiculo >= (float)min_tamanho_zona[zona_detectando])){
 									cout << "\n================= CONTOU UM VEÍCULO =====================\n";
 									id_carros++;
 									int eh_leve = 0;
-									if(tamanho_veiculo < 150){
+									if(tamanho_veiculo < 200){
 										veiculos_leves++;
 										eh_leve = 1;
 									}else{
 										veiculos_pesados++;
 										eh_leve = 0;
 									}
-									pqxx::work txn(conexao_postgres);
+									if(quant_carros_zona[zona_detectando]==-50) quant_carros_zona[zona_detectando] = 0;
+									quant_carros_zona[zona_detectando] += 1;
+									/*pqxx::work txn(conexao_postgres);
 									txn.exec("INSERT INTO veiculos_passagem(veiculo, posicao, classificacao, tempo, zona) values("+
 										txn.quote(id_carros) + ", " + txn.quote(posicao_string) + ", " + txn.quote(eh_leve) + ", current_timestamp , " + txn.quote(zona_detectando) + ")");
-									txn.commit();
+									txn.commit();*/
+									//ultimas_centroides[gera].push_back(ponto);
+									//getchar();
 										//"WHERE id = " + txn.quote(employee_id)); 				
 									//getchar();
 									//printf(" ---> Contou %d\n", id_carros);
 								}else{
-									
+									//getchar();
 								}
 							}
 							
@@ -515,6 +540,16 @@ namespace {
 			std::ostringstream str;
 			str << "(Leves: " << veiculos_leves << " / Pesados: " << veiculos_pesados << ")  - " << id_carros << "";
 			cv::putText(frame, str.str(), Point(0,30), cv::FONT_HERSHEY_SIMPLEX, 1, CV_RGB(255,0,0), 3, 8);
+			
+			int alinha_zonas = 1;
+			for(int i=0; i<60; i++){
+				if(quant_carros_zona[i]!=-50){
+					alinha_zonas+=25;
+					std::ostringstream astr;
+					astr << "> Zona: " << i << ": " << quant_carros_zona[i];
+					cv::putText(frame, astr.str(), Point(0,30+alinha_zonas), cv::FONT_HERSHEY_SIMPLEX, 0.7, CV_RGB(0,0,0), 2, 6);
+				}
+			}
 				
 			imshow("original", frame_original);
 			imshow(window_name, frame);			
