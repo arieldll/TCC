@@ -41,7 +41,7 @@ namespace {
 	int min_tamanho_zona[60];
 	
 	
-	float distancia_minima = 0; //tava 30
+	float distancia_minima = 60; //tava 30
 	int veiculos_leves = 0;
 	int veiculos_pesados = 0;
 	
@@ -189,8 +189,10 @@ namespace {
 		//zona 3
 		//adicionar_zona(340, 726, 376, 763, 7, 3);
 		//adicionar_zona(379, 737, 412, 771, 8, 3);
-		
-		adicionar_zona(99, 383, 137, 413, 1, 1);
+		/*(115, 384)
+(151, 412)
+*/
+		adicionar_zona(115,384,151,412, 1, 1);
 		adicionar_zona(141, 416, 176, 462, 2, 1);
 		adicionar_zona(573, 299, 609, 353, 3, 2);
 		adicionar_zona(533, 339, 576, 394, 4, 2);
@@ -200,8 +202,8 @@ namespace {
 		adicionar_zona(61, 257, 103, 270, 8, 2);
 		
 		min_tamanho_zona[1] = 70;
-		min_tamanho_zona[2] = 60;
-		min_tamanho_zona[3] = 60;
+		min_tamanho_zona[2] = 65;
+		min_tamanho_zona[3] = 65;
 
 		
         int n = 0;
@@ -439,7 +441,7 @@ namespace {
 								cout << "Menor distância " << menor_dist << "\n";
 								cv::line(frame, ponto, chave, cv::Scalar(200,0,0), 3);
 								//printf("menor distância: %f\n", menor_dist);							
-								if(menor_dist > distancia_minima && atual_centroides[gera].size() > 1 && ultimas_centroides[gera].size() >= 1 && (tamanho_veiculo >= (float)min_tamanho_zona[zona_detectando])){
+								if(menor_dist > distancia_minima && menor_dist != 999999 && atual_centroides[gera].size() > 1 && ultimas_centroides[gera].size() >= 1 && (tamanho_veiculo >= (float)min_tamanho_zona[zona_detectando]) && (atual_centroides[gera].size() - ultimas_centroides[gera].size()) == 1 && tamanho_veiculo < 250){
 									cout << "\n================= CONTOU UM VEÍCULO =====================\n";
 									id_carros++;
 									int eh_leve = 0;
@@ -462,6 +464,8 @@ namespace {
 									//getchar();
 									//printf(" ---> Contou %d\n", id_carros);
 								}else{
+									cout << "\n>> menor dist " << menor_dist << " distancia minima " << distancia_minima << endl << "atual centroid " << atual_centroides[gera].size() << " ultimas centroids " << ultimas_centroides[gera].size() << endl;
+									rectangle(frame, bounding_rect,  CV_RGB(255,0,0),2, 8,0);
 									//getchar();
 								}
 							}
@@ -578,7 +582,9 @@ namespace {
             //if(frames==310) break;
         }
         
+        std:ofstream saida_veiculos("quantidade_contada.txt");
         cout << "\n\n\n >>>>> Quantidade final de carros contados: " << round(id_carros) << "\n Veículos leves: " << veiculos_leves << "\n Veículos pesados: " << veiculos_pesados;
+        saida_veiculos << "\n\n\n >>>>> Quantidade final de carros contados: " << round(id_carros) << "\n Veículos leves: " << veiculos_leves << "\n Veículos pesados: " << veiculos_pesados;
         return 0;
     }
 }
