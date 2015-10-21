@@ -1,0 +1,4 @@
+Rua 0: adicionados = 259, finalizaram = 249 (96.13899613899613%)
+Rua 1: adicionados = 259, finalizaram = 253 (97.68339768339769%)
+Rua 2: adicionados = 516, finalizaram = 514 (99.6124031007752%)
+

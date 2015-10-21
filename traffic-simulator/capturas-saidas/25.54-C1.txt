@@ -1,0 +1,4 @@
+Tempo de simulacao (segundos): 1556
+Rua 0: adicionados = 130, finalizaram = 125 (96.15384615384616%)
+Rua 1: adicionados = 130, finalizaram = 127 (97.6923076923077%)
+Rua 2: adicionados = 258, finalizaram = 257 (99.6124031007752%)
