@@ -1,0 +1,69 @@
+Testes:
+
+Visão computacional classificou 134 veículos
+Zona 1 - 47
+Zona 2 - 54
+Zona 3 - 33
+
+Caso de teste 1
+6:15 usando todas as zonas com o mesmo tempo (todas iguais)
+Zona 1 - 8 carros por minuto - abre 25 segundos
+Zona 2 - 9 carros por minuto - abre 25 segundos
+Zona 3 - 5 carros por minuto - abre 25 segundos
+
+Resultado:
+
+Rua 0: adicionados = 50, finalizaram = 49 (98.0%)
+Rua 1: adicionados = 32, finalizaram = 27 (84.375%)
+Rua 2: adicionados = 57, finalizaram = 52 (91.22807017543859%)
+
+
+-----------------------------------------------------------------------------------------------------------------
+
+
+Caso de teste 2
+6:15 usando os dados coletados pela visão computacional 
+Zona 1 - 8 carros por minuto - abre 26 segundos
+Zona 2 - 9 carros por minuto - abre 30 segundos
+Zona 3 - 5 carros por minuto - abre 19 segundos
+
+Resultado:
+
+Rua 0: adicionados = 50, finalizaram = 49 (98.0%)
+Rua 1: adicionados = 32, finalizaram = 28 (87.5%)
+Rua 2: adicionados = 57, finalizaram = 52 (91.22807017543859%)
+
+Conclusão: Melhorou em 3% a segunda via
+
+
+-----------------------------------------------------------------------------------------------------------------
+
+
+Caso de teste 3
+6:15 usando todas as zonas com o mesmo tempo (todas iguais) multiplicando por 5 o fluxo
+Zona 1 - 40 carros por minuto - abre 25 segundos
+Zona 2 - 45 carros por minuto - abre 25 segundos
+Zona 3 - 25 carros por minuto - abre 25 segundos
+
+Resultado:
+
+Rua 0: adicionados = 244, finalizaram = 231 (94.67213114754098%)
+Rua 1: adicionados = 153, finalizaram = 131 (85.62091503267973%)
+Rua 2: adicionados = 272, finalizaram = 233 (85.66176470588235%)
+
+-----------------------------------------------------------------------------------------------------------------
+
+
+Caso de teste 4
+6:15 usando os dados coletados pela visão computacional  multiplicando por 5 o fluxo
+Zona 1 - 40 carros por minuto - abre 26 segundos
+Zona 2 - 45 carros por minuto - abre 30 segundos
+Zona 3 - 25 carros por minuto - abre 19 segundos
+
+Resultado:
+
+Rua 0: adicionados = 249, finalizaram = 244 (97.99196787148594%)
+Rua 1: adicionados = 156, finalizaram = 131 (83.97435897435898%)
+Rua 2: adicionados = 269, finalizaram = 248 (92.19330855018588%)
+
+Conclusão: Melhorou 3% a primeira via e melhorou 6% a terceira via. Piorou 2% a segunda via.

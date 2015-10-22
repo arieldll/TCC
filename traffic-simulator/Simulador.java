@@ -40,22 +40,22 @@ public class Simulador implements Runnable {
 		ruas.add(new Rua( 
 			new Point2D(0, Constants.ALTURA_TELA / 2 - 10),								// Onde a rua inicia
 			new Point2D(Constants.LARGURA_TELA, Constants.ALTURA_TELA / 2 - 10),		// Onde a rua termina
-			10, /*4.86 arredondado*/																			// Fluxo de carros por minuto
-			20																			// Tempo que o semaforo fica verde
+			40, /*7.52 arredondado*/														// Fluxo de carros por minuto
+			26																			// Tempo que o semaforo fica verde
 		)); //Zona 1
 
 		ruas.add(new Rua(
 			new Point2D(Constants.LARGURA_TELA, Constants.ALTURA_TELA / 2 + 10),
 			new Point2D(0, Constants.ALTURA_TELA / 2 + 10),
-			10, /*5.09 arredondado*/
-			20
+			25, /*5,28 arredondado*/
+			19
 		)); //Zona 3
 
 		ruas.add(new Rua(
 			new Point2D(Constants.LARGURA_TELA / 2 - 10, 0),
 			new Point2D(Constants.LARGURA_TELA / 2 - 10, Constants.ALTURA_TELA),
-			20, /*9.92*/
-			35
+			45, /*8,64*/
+			30
 		)); //Zona 2
 
 		/*ruas.add(new Rua(

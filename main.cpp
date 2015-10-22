@@ -40,6 +40,8 @@ namespace {
 	int quant_carros_zona[60];
 	int min_tamanho_zona[60];
 	
+	float tempo_segundos_semaforo = 75;
+	
 	
 	float distancia_minima = 60; //tava 30
 	int veiculos_leves = 0;
@@ -454,10 +456,11 @@ namespace {
 									}
 									if(quant_carros_zona[zona_detectando]==-50) quant_carros_zona[zona_detectando] = 0;
 									quant_carros_zona[zona_detectando] += 1;
+									//getchar();
 									/*pqxx::work txn(conexao_postgres);
 									txn.exec("INSERT INTO veiculos_passagem(veiculo, posicao, classificacao, tempo, zona) values("+
 										txn.quote(id_carros) + ", " + txn.quote(posicao_string) + ", " + txn.quote(eh_leve) + ", current_timestamp , " + txn.quote(zona_detectando) + ")");
-									txn.commit();*/
+									txn.commit(); */
 									//ultimas_centroides[gera].push_back(ponto);
 									//getchar();
 										//"WHERE id = " + txn.quote(employee_id)); 				
@@ -573,6 +576,19 @@ namespace {
                 imwrite(filename,frame);
                 cout << "Saved " << filename << endl;
                 break;
+            case 'g':
+				cout << endl << "------------------------ MODELAGEM ---------------------------" << endl;
+				cout << "Quant carros total: " << round(id_carros) << endl;
+				for(int i=0; i<10; i++){
+					if(quant_carros_zona[i] > 0){
+						cout << "Zona " << i << endl;
+						float porcent = quant_carros_zona[i] / round(id_carros);
+						float tempo = tempo_segundos_semaforo * porcent;
+						cout << "Tempo: " << tempo << "(" << porcent << ")" << endl << endl << endl;
+					}
+				}
+				
+				return 0;
             default:
                 break;
             }
@@ -581,7 +597,7 @@ namespace {
             //frames++;
             //if(frames==310) break;
         }
-        
+        cout << "TESTANDO SAÍDAAAAAAAAAAAAAAAA";
         std:ofstream saida_veiculos("quantidade_contada.txt");
         cout << "\n\n\n >>>>> Quantidade final de carros contados: " << round(id_carros) << "\n Veículos leves: " << veiculos_leves << "\n Veículos pesados: " << veiculos_pesados;
         saida_veiculos << "\n\n\n >>>>> Quantidade final de carros contados: " << round(id_carros) << "\n Veículos leves: " << veiculos_leves << "\n Veículos pesados: " << veiculos_pesados;
