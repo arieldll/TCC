@@ -182,3 +182,41 @@ Rua 1: adicionados = 112, finalizaram = 94 (83.92857142857143%)
 Rua 2: adicionados = 219, finalizaram = 200 (91.32420091324201%)
 Rua 3: adicionados = 124, finalizaram = 119 (95.96774193548387%)
 
+
+-----------------------------------------------------------------------------------------------------------------
+
+
+Caso de teste 12
+
+6:15 utilizando divisão de tempo equanime de tempo
+
+Zona 1 - 6 carros por minuto - abre 18.75 segundos
+Zona 2 - 30 carros por minuto - abre 18.75 segundos
+Zona 3 - 80 carros por minuto - abre 18.75 segundos
+Zona 4 - 10 carros por minuto - abre 18.75 segundos
+
+Resultado:
+
+Rua 0: adicionados = 38, finalizaram = 36 (94.73684210526315%)
+Rua 1: adicionados = 186, finalizaram = 164 (88.17204301075269%)
+Rua 2: adicionados = 464, finalizaram = 175 (37.71551724137931%)
+Rua 3: adicionados = 62, finalizaram = 57 (91.93548387096774%)
+
+-----------------------------------------------------------------------------------------------------------------
+
+Caso de teste 13
+
+6:15 Com tempo adaptado ao modelo
+
+Zona 1 - 6 carros por minuto - abre 4 segundos
+Zona 2 - 30 carros por minuto - abre 18 segundos
+Zona 3 - 80 carros por minuto - abre 47 segundos
+Zona 4 - 10 carros por minuto - abre 6 segundos
+
+Resultado:
+
+Rua 0: adicionados = 38, finalizaram = 29 (76.31578947368422%)
+Rua 1: adicionados = 186, finalizaram = 149 (80.10752688172043%)
+Rua 2: adicionados = 465, finalizaram = 448 (96.34408602150538%)
+Rua 3: adicionados = 62, finalizaram = 58 (93.54838709677419%)
+
