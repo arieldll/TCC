@@ -62,9 +62,9 @@ Zona 3 - 25 carros por minuto - abre 19 segundos
 
 Resultado:
 
-Rua 0: adicionados = 249, finalizaram = 244 (97.99196787148594%)
-Rua 1: adicionados = 156, finalizaram = 131 (83.97435897435898%)
-Rua 2: adicionados = 269, finalizaram = 248 (92.19330855018588%)
+Rua 0: adicionados = 249, finalizaram = 244 (97.99196787148594%) //mudar para 244
+Rua 1: adicionados = 156, finalizaram = 131 (83.97435897435898%) //mudar para 153
+Rua 2: adicionados = 269, finalizaram = 248 (92.19330855018588%) //mudar para 272
 
 Conclusão: Melhorou 3% a primeira via e melhorou 6% a terceira via. Piorou 2% a segunda via.
 
@@ -78,8 +78,8 @@ Zona 3 - 10 carros por minuto - abre 19 segundos
 
 Resultado:
 
-Rua 0: adicionados = 246, finalizaram = 236 (95.9349593495935%)
-Rua 1: adicionados = 63, finalizaram = 53 (84.12698412698413%)
+Rua 0: adicionados = 244, finalizaram = 236 (96.7249593495935%) //mudar para 244
+Rua 1: adicionados = 63, finalizaram = 53 (84.12698412698413%)  
 Rua 2: adicionados = 63, finalizaram = 58 (92.06349206349206%)
 
 
@@ -93,7 +93,7 @@ Zona 3 - 10 carros por minuto - abre 13 segundos
 
 Resultado:
 
-Rua 0: adicionados = 245, finalizaram = 239 (97.55102040816327%)
+Rua 0: adicionados = 244, finalizaram = 239 (97.95102040816327%)
 Rua 1: adicionados = 155, finalizaram = 104 (67.0967741935484%)
 Rua 2: adicionados = 63, finalizaram = 54 (85.71428571428571%)
 
@@ -124,8 +124,8 @@ Zona 3 - 36 carros por minuto - abre 30 segundos
 Resultado:
 
 Rua 0: adicionados = 153, finalizaram = 149 (97.38562091503267%)
-Rua 1: adicionados = 218, finalizaram = 189 (86.69724770642202%)
-Rua 2: adicionados = 182, finalizaram = 170 (93.4065934065934%)
+Rua 1: adicionados = 217, finalizaram = 189 (87.09724770642202%)
+Rua 2: adicionados = 183, finalizaram = 170 (92.8965934065934%)
 
 
 -----------------------------------------------------------------------------------------------------------------
@@ -141,7 +141,7 @@ Resultado:
 
 Rua 0: adicionados = 153, finalizaram = 149 (97.38562091503267%)
 Rua 1: adicionados = 217, finalizaram = 185 (85.25345622119815%)
-Rua 2: adicionados = 182, finalizaram = 169 (92.85714285714286%)
+Rua 2: adicionados = 183, finalizaram = 169 (92.34714285714286%)
 
 
 
